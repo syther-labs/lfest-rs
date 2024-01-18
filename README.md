@@ -63,7 +63,7 @@ Some of these metric may behave differently from what you would expect, so make 
 To use this crate in your project, add the following to your Cargo.toml:
 ```ignore
 [dependencies]
-lfest = "^0.35"
+lfest = "0.42"
 ```
 
 Then proceed to use it in your code.
@@ -87,9 +87,6 @@ If you have time available to contribute to the project, feel free to contact me
 
 ### Donations :moneybag: :money_with_wings:
 I you would like to support the development of this crate, feel free to send over a donation:
-
-Or if you're a greedy [Ferengi](https://memory-alpha.fandom.com/wiki/Ferengi) looking for work, 
-get payed to work on this project (Send me an [eMail](wellmannmathis@gmail.com)).
 
 Monero (XMR) address:
 ```plain
