@@ -123,12 +123,19 @@ fn percent_point_function(q: f64) -> f64 {
     SAMPLES[(q * 100.0) as usize]
 }
 
+/// Contains the cornish fisher outputs.
+pub struct CornishFisherOutput {
+    pub exp: f64,
+    pub var: f64,
+    pub asset_value: f64,
+}
+
 /// Compute the Cornish-Fisher Value at Risk (CF-VaR)
 ///
 /// # Arguments:
-/// 'log_returns': logarithmic return series: (p1 / p0).ln()
-/// asset_value: current asset value
-/// confidence_interval: in range [0.0, 1.0], usually something like 0.01 or
+/// - 'log_returns': logarithmic return series: (p1 / p0).ln()
+/// - `asset_value`: current asset value
+/// - `confidence_interval`: in range [0.0, 1.0], usually something like 0.01 or
 /// 0.05.
 ///
 /// # Returns:
@@ -138,20 +145,24 @@ pub(crate) fn cornish_fisher_value_at_risk(
     log_returns: &[f64],
     asset_value: f64,
     confidence_interval: f64,
-) -> (f64, f64, f64) {
+) -> CornishFisherOutput {
     let (mean, std_dev, skew, kurtosis) = statistical_moments(log_returns);
 
     let quantile = percent_point_function(confidence_interval);
-    let cf_exp = quantile
+    let exp = quantile
         + (quantile.powi(2) - 1.0) * skew / 6.0
         + (quantile.powi(3) - 3.0 * quantile) * kurtosis / 24.0
         - (2.0 * quantile.powi(3) - 5.0 * quantile) * skew.powi(2) / 36.0;
-    let cf_var = mean + std_dev * cf_exp;
+    let var = mean + std_dev * exp;
     //let cf_asset_value = asset_value * (1.0 + cf_var); // like in the paper, but
     // wrong as the underlying returns are logarithmic
-    let cf_asset_value = asset_value - (asset_value * cf_var.exp());
+    let asset_value = asset_value - (asset_value * var.exp());
 
-    (cf_exp, cf_var, cf_asset_value)
+    CornishFisherOutput {
+        exp,
+        var,
+        asset_value,
+    }
 }
 
 #[cfg(test)]

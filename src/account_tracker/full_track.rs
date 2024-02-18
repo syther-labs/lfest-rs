@@ -395,7 +395,7 @@ where
             decimal_to_f64(self.wallet_balance_start.inner()),
             percentile,
         )
-        .2
+        .asset_value
     }
 
     /// Calculate the corni fisher value at risk from n consequtive hourly
@@ -432,7 +432,7 @@ where
             decimal_to_f64(self.wallet_balance_start.inner()),
             percentile,
         )
-        .1;
+        .var;
         decimal_to_f64(self.wallet_balance_start.inner())
             - (decimal_to_f64(self.wallet_balance_start.inner()) * cf_var)
     }
@@ -466,13 +466,13 @@ where
             decimal_to_f64(self.wallet_balance_start.inner()),
             0.01,
         )
-        .1;
+        .var;
         let cf_var_acc = cornish_fisher_value_at_risk(
             rets_acc,
             decimal_to_f64(self.wallet_balance_start.inner()),
             0.01,
         )
-        .1;
+        .var;
 
         let num_trading_days = self.num_trading_days() as f64;
 
