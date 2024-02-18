@@ -10,6 +10,8 @@ use crate::{
     utils::{decimal_pow, decimal_sqrt, decimal_sum, decimal_to_f64, min, variance},
 };
 
+use super::d_ratio;
+
 const DAILY_NS: u64 = 86_400_000_000_000;
 const HOURLY_NS: u64 = 3_600_000_000_000;
 
@@ -460,40 +462,12 @@ where
             ReturnsSource::Daily => &self.hist_ln_returns_daily_bnh,
             ReturnsSource::Hourly => &self.hist_ln_returns_hourly_bnh,
         };
-
-        let cf_var_bnh = cornish_fisher_value_at_risk(
-            rets_bnh,
-            decimal_to_f64(self.wallet_balance_start.inner()),
-            0.01,
-        )
-        .var;
-        let cf_var_acc = cornish_fisher_value_at_risk(
+        d_ratio(
             rets_acc,
-            decimal_to_f64(self.wallet_balance_start.inner()),
-            0.01,
+            rets_bnh,
+            self.wallet_balance_start,
+            self.num_trading_days(),
         )
-        .var;
-
-        let num_trading_days = self.num_trading_days() as f64;
-
-        // compute annualized returns
-        let roi_acc = rets_acc
-            .iter()
-            .fold(1.0, |acc, x| acc * x.exp())
-            .powf(365.0 / num_trading_days);
-        let roi_bnh = rets_bnh
-            .iter()
-            .fold(1.0, |acc, x| acc * x.exp())
-            .powf(365.0 / num_trading_days);
-
-        let rtv_acc = roi_acc / cf_var_acc;
-        let rtv_bnh = roi_bnh / cf_var_bnh;
-        debug!(
-            "roi_acc: {:.2}, roi_bnh: {:.2}, cf_var_bnh: {:.8}, cf_var_acc: {:.8}, rtv_acc: {}, rtv_bnh: {}",
-            roi_acc, roi_bnh, cf_var_bnh, cf_var_acc, rtv_acc, rtv_bnh,
-        );
-
-        (1.0 + (roi_acc - roi_bnh) / roi_bnh.abs()) * (cf_var_bnh / cf_var_acc)
     }
 
     /// Annualized return on investment as a factor, e.g.: 100% -> 2x
