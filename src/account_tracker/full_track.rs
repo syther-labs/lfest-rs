@@ -7,7 +7,7 @@ use crate::{
     account_tracker::AccountTracker,
     cornish_fisher::cornish_fisher_value_at_risk,
     quote,
-    types::{Currency, MarginCurrency, QuoteCurrency, Side},
+    types::{Currency, LnReturns, MarginCurrency, QuoteCurrency, Side},
     utils::{decimal_pow, decimal_sqrt, decimal_sum, decimal_to_f64, min, variance},
 };
 
@@ -377,26 +377,24 @@ where
         }
     }
 
-    /// Calculate the cornish fisher value at risk based on daily returns of the
-    /// account # Arguments
-    /// returns_source: the sampling interval of pnl snapshots
-    /// percentile: in range [0.0, 1.0], usually something like 0.01 or 0.05
-    #[inline]
+    /// Calculate the cornish fisher value at risk of the account.
+    ///
+    /// # Arguments:
+    /// - `returns_source`: the sampling interval of pnl snapshots
+    /// - `percentile`: in range [0.0, 1.0], usually something like 0.01 or 0.05
     pub fn cornish_fisher_value_at_risk(
         &self,
         returns_source: ReturnsSource,
         percentile: f64,
-    ) -> f64 {
+    ) -> crate::Result<M> {
         let rets = match returns_source {
             ReturnsSource::Daily => &self.hist_ln_returns_daily_acc,
             ReturnsSource::Hourly => &self.hist_ln_returns_hourly_acc,
         };
-        cornish_fisher_value_at_risk(
-            rets,
-            decimal_to_f64(self.wallet_balance_start.inner()),
-            percentile,
+        Ok(
+            cornish_fisher_value_at_risk(&LnReturns(rets), self.wallet_balance_start, percentile)?
+                .asset_value_at_risk,
         )
-        .asset_value
     }
 
     /// Return the number of trading days
@@ -413,7 +411,7 @@ where
     ///
     /// # Parameters:
     /// `returns_source`: The sampling interval of pnl snapshots
-    pub fn d_ratio(&self, returns_source: ReturnsSource) -> f64 {
+    pub fn d_ratio(&self, returns_source: ReturnsSource) -> crate::Result<f64> {
         let rets_acc = match returns_source {
             ReturnsSource::Daily => &self.hist_ln_returns_daily_acc,
             ReturnsSource::Hourly => &self.hist_ln_returns_hourly_acc,
@@ -423,8 +421,8 @@ where
             ReturnsSource::Hourly => &self.hist_ln_returns_hourly_bnh,
         };
         d_ratio(
-            rets_acc,
-            rets_bnh,
+            LnReturns(rets_acc),
+            LnReturns(rets_bnh),
             self.wallet_balance_start,
             self.num_trading_days(),
         )
@@ -712,9 +710,9 @@ drawdown_wallet_balance: {},
 drawdown_total: {},
 historical_value_at_risk_daily: {},
 historical_value_at_risk_hourly: {},
-cornish_fisher_value_at_risk_daily: {},
-d_ratio_daily: {},
-d_ratio_hourly: {},
+cornish_fisher_value_at_risk_daily: {:?},
+d_ratio_daily: {:?},
+d_ratio_hourly: {:?},
 num_trades: {},
 buy_ratio: {},
 turnover: {},
@@ -1290,14 +1288,24 @@ mod tests {
 
         assert_eq!(
             round(
-                acc_tracker.cornish_fisher_value_at_risk(ReturnsSource::Hourly, 0.05),
+                decimal_to_f64(
+                    acc_tracker
+                        .cornish_fisher_value_at_risk(ReturnsSource::Hourly, 0.05)
+                        .unwrap()
+                        .inner()
+                ),
                 3
             ),
             1.354
         );
         assert_eq!(
             round(
-                acc_tracker.cornish_fisher_value_at_risk(ReturnsSource::Hourly, 0.01),
+                decimal_to_f64(
+                    acc_tracker
+                        .cornish_fisher_value_at_risk(ReturnsSource::Hourly, 0.01)
+                        .unwrap()
+                        .inner()
+                ),
                 3
             ),
             5.786

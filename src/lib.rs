@@ -28,6 +28,7 @@ mod types;
 mod utils;
 
 pub use mock_exchange::{mock_exchange_base, mock_exchange_quote};
+pub use types::Result;
 
 /// Exports common types
 pub mod prelude {

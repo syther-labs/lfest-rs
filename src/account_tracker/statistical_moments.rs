@@ -44,7 +44,7 @@ mod tests {
     #[test]
     fn test_statistical_moments() {
         let mut rng = thread_rng();
-        let vals = Vec::<f64>::from_iter((0..100_000).map(|_| rng.sample(StandardNormal)));
+        let vals = Vec::<f64>::from_iter((0..1_000_000).map(|_| rng.sample(StandardNormal)));
 
         let stats = statistical_moments(&vals);
         assert_eq!(round(stats.mean, 2), 0.0);
