@@ -38,9 +38,8 @@ mod tests {
     use rand::{thread_rng, Rng};
     use rand_distr::StandardNormal;
 
-    use crate::utils::tests::round;
-
     use super::*;
+    use crate::utils::tests::round;
 
     #[test]
     fn test_statistical_moments() {
