@@ -23,6 +23,8 @@ mod order_margin;
 mod position;
 mod risk_engine;
 #[cfg(test)]
+mod test_helpers;
+#[cfg(test)]
 mod tests;
 mod types;
 mod utils;
