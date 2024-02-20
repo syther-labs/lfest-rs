@@ -5,8 +5,9 @@ use crate::{
 };
 
 /// Contains the cornish fisher outputs.
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct CornishFisherOutput<M> {
-    pub exp: f64,
     pub var: f64,
     pub asset_value_at_risk: M,
 }
@@ -42,6 +43,7 @@ where
         // See <https://portfoliooptimizer.io/blog/corrected-cornish-fisher-expansion-improving-the-accuracy-of-modified-value-at-risk/>
         warn!("Cornish-Fisher expansion outside the domain of validity.");
     }
+
     let quantile = distrs::Normal::ppf(confidence_interval, 0.0, 1.0);
 
     let exp = quantile
@@ -53,12 +55,34 @@ where
 
     // If these were percent returns we'd use the commented out one.
     // But her we use ln returns, so we take the latter one.
-    //let asset_value_at_risk = asset_value * (1.0 + cf_var);
-    let asset_value_at_risk = asset_value - (asset_value * C::new(var.exp().try_into()?));
+    // let asset_value_at_risk = asset_value * C::new((1.0 + var).try_into()?);
+    let asset_value_at_risk = asset_value * C::new(var.exp().try_into()?);
 
     Ok(CornishFisherOutput {
-        exp,
         var,
         asset_value_at_risk,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        prelude::{Decimal, QuoteCurrency},
+        quote,
+        test_helpers::LN_RETS_H,
+    };
+
+    #[test]
+    fn test_cornish_fisher_value_at_risk() {
+        let _ = pretty_env_logger::try_init();
+        // Comparison to the original implementation at <https://github.com/JDE65/D-ratio>.
+        assert_eq!(
+            cornish_fisher_value_at_risk(&LnReturns(&LN_RETS_H), quote!(1000.0), 0.05).unwrap(),
+            CornishFisherOutput {
+                var: -0.013637197569894961,
+                asset_value_at_risk: quote!(986.455367753932277000),
+            }
+        );
+    }
 }
