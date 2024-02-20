@@ -1,4 +1,5 @@
 /// The statistical moments of a distribution
+#[derive(Debug, Clone)]
 pub struct StatisticalMoments {
     /// The sample mean of the values.
     pub mean: f64,
@@ -7,7 +8,7 @@ pub struct StatisticalMoments {
     /// The skew of the values.
     pub skew: f64,
     /// The kurtosis of the values.
-    pub kurtosis: f64,
+    pub excess_kurtosis: f64,
 }
 
 /// Compute the four statistical moments: mean, std_dev, skew and kurtosis
@@ -29,7 +30,7 @@ pub fn statistical_moments(vals: &[f64]) -> StatisticalMoments {
         mean,
         std_dev,
         skew,
-        kurtosis,
+        excess_kurtosis: kurtosis,
     }
 }
 
@@ -50,7 +51,7 @@ mod tests {
         assert_eq!(round(stats.mean, 2), 0.0);
         assert_eq!(round(stats.std_dev, 2), 1.0);
         assert_eq!(round(stats.skew, 1), 0.0);
-        assert_eq!(round(stats.kurtosis, 1), 0.0);
+        assert_eq!(round(stats.excess_kurtosis, 1), 0.0);
 
         // From the example in scipy docs of the `skew` method.
         assert_eq!(
@@ -58,7 +59,7 @@ mod tests {
             0.2650554122698573
         );
         assert_eq!(
-            statistical_moments(&[2.0, 8.0, 0.0, 4.0, 1.0, 9.0, 9.0, 0.0]).kurtosis,
+            statistical_moments(&[2.0, 8.0, 0.0, 4.0, 1.0, 9.0, 9.0, 0.0]).excess_kurtosis,
             -1.6660010752838508
         );
     }

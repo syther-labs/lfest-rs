@@ -36,7 +36,7 @@ where
 
     let exp = quantile
         + (quantile.powi(2) - 1.0) * stats.skew / 6.0
-        + (quantile.powi(3) - 3.0 * quantile) * stats.kurtosis / 24.0
+        + (quantile.powi(3) - 3.0 * quantile) * stats.excess_kurtosis / 24.0
         - (2.0 * quantile.powi(3) - 5.0 * quantile) * stats.skew.powi(2) / 36.0;
 
     let var = stats.mean + stats.std_dev * exp;
