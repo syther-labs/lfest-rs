@@ -32,6 +32,16 @@ where
 {
     let stats = statistical_moments(log_returns.0);
 
+    if stats.skew <= 6.0 * (2_f64.sqrt() - 1.0)
+        && 27.0 * stats.excess_kurtosis
+            - (216.0 + 66.0 * stats.skew.powi(2)) * stats.excess_kurtosis
+            + 40.0 * stats.skew.powi(4)
+            + 336.0 * stats.skew.powi(2)
+            <= 0.0
+    {
+        // See <https://portfoliooptimizer.io/blog/corrected-cornish-fisher-expansion-improving-the-accuracy-of-modified-value-at-risk/>
+        warn!("Cornish-Fisher expansion outside the domain of validity.");
+    }
     let quantile = distrs::Normal::ppf(confidence_interval, 0.0, 1.0);
 
     let exp = quantile
