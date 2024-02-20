@@ -1,5 +1,12 @@
+struct StatisticalMoments {
+    mean: f64,
+    std_dev: f64,
+    skew: f64,
+    kurtosis: f64,
+}
+
 /// Compute the four statistical moments: mean, std_dev, skew and kurtosis
-fn statistical_moments(vals: &[f64]) -> (f64, f64, f64, f64) {
+fn statistical_moments(vals: &[f64]) -> StatisticalMoments {
     let mean = vals.iter().sum::<f64>() / vals.len() as f64;
 
     let variance = vals.iter().map(|v| (*v - mean).powi(2)).sum::<f64>() / vals.len() as f64;
@@ -13,7 +20,12 @@ fn statistical_moments(vals: &[f64]) -> (f64, f64, f64, f64) {
         / variance.powi(2)
         - 3.0;
 
-    (mean, std_dev, skew, kurtosis)
+    StatisticalMoments {
+        mean,
+        std_dev,
+        skew,
+        kurtosis,
+    }
 }
 
 /// lookup the percentage point function
@@ -146,14 +158,14 @@ pub(crate) fn cornish_fisher_value_at_risk(
     asset_value: f64,
     confidence_interval: f64,
 ) -> CornishFisherOutput {
-    let (mean, std_dev, skew, kurtosis) = statistical_moments(log_returns);
+    let stats = statistical_moments(log_returns);
 
     let quantile = percent_point_function(confidence_interval);
     let exp = quantile
-        + (quantile.powi(2) - 1.0) * skew / 6.0
-        + (quantile.powi(3) - 3.0 * quantile) * kurtosis / 24.0
-        - (2.0 * quantile.powi(3) - 5.0 * quantile) * skew.powi(2) / 36.0;
-    let var = mean + std_dev * exp;
+        + (quantile.powi(2) - 1.0) * stats.skew / 6.0
+        + (quantile.powi(3) - 3.0 * quantile) * stats.kurtosis / 24.0
+        - (2.0 * quantile.powi(3) - 5.0 * quantile) * stats.skew.powi(2) / 36.0;
+    let var = stats.mean + stats.std_dev * exp;
     //let cf_asset_value = asset_value * (1.0 + cf_var); // like in the paper, but
     // wrong as the underlying returns are logarithmic
     let asset_value = asset_value - (asset_value * var.exp());
@@ -178,11 +190,11 @@ mod tests {
         let mut rng = thread_rng();
         let vals: Vec<f64> = (0..10_000).map(|_| rng.sample(StandardNormal)).collect();
 
-        let (mean, std_dev, skew, kurtosis) = statistical_moments(&vals);
-        assert_eq!(round(mean, 1), 0.0);
-        assert_eq!(round(std_dev, 1), 1.0);
-        assert_eq!(round(skew, 0), 0.0);
-        assert_eq!(round(kurtosis, 0), 0.0);
+        let stats = statistical_moments(&vals);
+        assert_eq!(round(stats.mean, 1), 0.0);
+        assert_eq!(round(stats.std_dev, 1), 1.0);
+        assert_eq!(round(stats.skew, 0), 0.0);
+        assert_eq!(round(stats.kurtosis, 0), 0.0);
     }
 
     #[test]

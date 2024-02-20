@@ -2,6 +2,7 @@ use std::{fmt::Display, iter::FromIterator};
 
 use fpdec::{Dec, Decimal};
 
+use super::d_ratio;
 use crate::{
     account_tracker::AccountTracker,
     cornish_fisher::cornish_fisher_value_at_risk,
@@ -9,8 +10,6 @@ use crate::{
     types::{Currency, MarginCurrency, QuoteCurrency, Side},
     utils::{decimal_pow, decimal_sqrt, decimal_sum, decimal_to_f64, min, variance},
 };
-
-use super::d_ratio;
 
 const DAILY_NS: u64 = 86_400_000_000_000;
 const HOURLY_NS: u64 = 3_600_000_000_000;
