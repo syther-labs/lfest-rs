@@ -8,15 +8,15 @@ struct StatisticalMoments {
 /// Compute the four statistical moments: mean, std_dev, skew and kurtosis
 fn statistical_moments(vals: &[f64]) -> StatisticalMoments {
     let mean = vals.iter().sum::<f64>() / vals.len() as f64;
+    let n = vals.len() as f64;
 
-    let variance = vals.iter().map(|v| (*v - mean).powi(2)).sum::<f64>() / vals.len() as f64;
+    let variance = vals.iter().map(|v| (*v - mean).powi(2)).sum::<f64>() / n;
     let std_dev = variance.sqrt();
 
-    let skew = ((1.0 / vals.len() as f64) * vals.iter().map(|v| (*v - mean).powi(3)).sum::<f64>())
-        / variance.powf(1.5);
+    let skew =
+        ((1.0 / n) * vals.iter().map(|v| (*v - mean).powi(3)).sum::<f64>()) / variance.powf(1.5);
 
-    let kurtosis = ((1.0 / vals.len() as f64)
-        * vals.iter().map(|v| (*v - mean).powi(4)).sum::<f64>())
+    let kurtosis = ((1.0 / n) * vals.iter().map(|v| (*v - mean).powi(4)).sum::<f64>())
         / variance.powi(2)
         - 3.0;
 
@@ -188,13 +188,23 @@ mod tests {
     #[test]
     fn test_statistical_moments() {
         let mut rng = thread_rng();
-        let vals: Vec<f64> = (0..10_000).map(|_| rng.sample(StandardNormal)).collect();
+        let vals = Vec::<f64>::from_iter((0..100_000).map(|_| rng.sample(StandardNormal)));
 
         let stats = statistical_moments(&vals);
-        assert_eq!(round(stats.mean, 1), 0.0);
-        assert_eq!(round(stats.std_dev, 1), 1.0);
-        assert_eq!(round(stats.skew, 0), 0.0);
-        assert_eq!(round(stats.kurtosis, 0), 0.0);
+        assert_eq!(round(stats.mean, 2), 0.0);
+        assert_eq!(round(stats.std_dev, 2), 1.0);
+        assert_eq!(round(stats.skew, 1), 0.0);
+        assert_eq!(round(stats.kurtosis, 1), 0.0);
+
+        // From the example in scipy docs of the `skew` method.
+        assert_eq!(
+            statistical_moments(&[2.0, 8.0, 0.0, 4.0, 1.0, 9.0, 9.0, 0.0]).skew,
+            0.2650554122698573
+        );
+        assert_eq!(
+            statistical_moments(&[2.0, 8.0, 0.0, 4.0, 1.0, 9.0, 9.0, 0.0]).kurtosis,
+            -1.6660010752838508
+        );
     }
 
     #[test]
