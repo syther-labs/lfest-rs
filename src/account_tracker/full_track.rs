@@ -399,45 +399,6 @@ where
         .asset_value
     }
 
-    /// Calculate the corni fisher value at risk from n consequtive hourly
-    /// return values This should have better statistical properties
-    /// compared to using daily returns due to having more samples. Set n to
-    /// 24 for daily value at risk, but with 24x more samples from which to take
-    /// the percentile, giving a more accurate VaR
-    /// # Parameters:
-    /// n: number of hourly returns to use
-    /// percentile: value between [0.0, 1.0], smaller value will return more
-    /// worst case results
-    pub fn cornish_fisher_value_at_risk_from_n_hourly_returns(
-        &self,
-        n: usize,
-        percentile: f64,
-    ) -> f64 {
-        let rets = &self.hist_ln_returns_hourly_acc;
-        if rets.len() < n {
-            debug!("not enough hourly returns to compute CF-VaR for n={}", n);
-            return 0.0;
-        }
-        let mut ret_streaks = Vec::with_capacity(rets.len() - n);
-        for i in n..rets.len() {
-            let mut r = 1.0;
-            for ret in rets.iter().take(i).skip(i - n) {
-                r *= ret.exp();
-            }
-            ret_streaks.push(r);
-        }
-
-        // TODO: make work with `Decimal` type
-        let cf_var = cornish_fisher_value_at_risk(
-            &ret_streaks,
-            decimal_to_f64(self.wallet_balance_start.inner()),
-            percentile,
-        )
-        .var;
-        decimal_to_f64(self.wallet_balance_start.inner())
-            - (decimal_to_f64(self.wallet_balance_start.inner()) * cf_var)
-    }
-
     /// Return the number of trading days
     #[inline(always)]
     pub fn num_trading_days(&self) -> u64 {
@@ -752,7 +713,6 @@ drawdown_total: {},
 historical_value_at_risk_daily: {},
 historical_value_at_risk_hourly: {},
 cornish_fisher_value_at_risk_daily: {},
-cornish_fisher_value_at_risk_daily_from_hourly_returns: {},
 d_ratio_daily: {},
 d_ratio_hourly: {},
 num_trades: {},
@@ -776,7 +736,6 @@ num_trading_days: {},
             self.historical_value_at_risk(ReturnsSource::Daily, 0.01),
             self.historical_value_at_risk_from_n_hourly_returns(24, 0.01),
             self.cornish_fisher_value_at_risk(ReturnsSource::Daily, 0.01),
-            self.cornish_fisher_value_at_risk_from_n_hourly_returns(24, 0.01),
             self.d_ratio(ReturnsSource::Daily),
             self.d_ratio(ReturnsSource::Hourly),
             self.num_trades(),
@@ -1342,29 +1301,6 @@ mod tests {
                 3
             ),
             5.786
-        );
-    }
-
-    #[test]
-    fn acc_tracker_cornish_fisher_value_at_risk_from_n_hourly_returns() {
-        if let Err(_) = pretty_env_logger::try_init() {}
-
-        let mut at = FullAccountTracker::new(quote!(100.0));
-        at.hist_ln_returns_hourly_acc = LN_RETS_H.into();
-
-        assert_eq!(
-            round(
-                at.cornish_fisher_value_at_risk_from_n_hourly_returns(24, 0.05),
-                3
-            ),
-            4.043
-        );
-        assert_eq!(
-            round(
-                at.cornish_fisher_value_at_risk_from_n_hourly_returns(24, 0.01),
-                3
-            ),
-            5.358
         );
     }
 
