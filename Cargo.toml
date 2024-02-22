@@ -1,6 +1,6 @@
 [package]
 name = "lfest"
-version = "0.44.1"
+version = "0.44.2"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2021"
 license-file = "LICENSE"
@@ -26,3 +26,7 @@ num-traits = "0.2"
 csv = "1"
 rand = "0.8"
 rand_distr = "0.4"
+
+[features]
+std = []
+cornish_fisher_domain_warning = []

@@ -20,19 +20,18 @@ pub struct CornishFisherOutput<M> {
 /// - `confidence_interval`: in range [0.0, 1.0], usually something like 0.01 or
 /// 0.05.
 ///
-/// # Returns:
-/// tuple containing (cf_exp, cf_var, cf_asset_value)
-/// of most importance is cf_var which if the actual CF-VaR
 pub(crate) fn cornish_fisher_value_at_risk<'a, C>(
-    log_returns: &LnReturns<'a, f64>,
+    ln_returns: &LnReturns<'a, f64>,
     asset_value: C,
     confidence_interval: f64,
 ) -> Result<CornishFisherOutput<C>>
 where
     C: Currency,
 {
-    let stats = statistical_moments(log_returns.0);
+    let stats = statistical_moments(ln_returns.0);
 
+    // Its a bit expensive to compute, so only warn if user opts-in
+    #[cfg(feature = "cornish_fisher_domain_warning")]
     if stats.skew <= 6.0 * (2_f64.sqrt() - 1.0)
         && 27.0 * stats.excess_kurtosis
             - (216.0 + 66.0 * stats.skew.powi(2)) * stats.excess_kurtosis
@@ -54,7 +53,7 @@ where
     let var = stats.mean + stats.std_dev * exp;
 
     // If these were percent returns we'd use the commented out one.
-    // But her we use ln returns, so we take the latter one.
+    // But here we use ln returns, so we take the latter one.
     // let asset_value_at_risk = asset_value * C::new((1.0 + var).try_into()?);
     let asset_value_at_risk = asset_value * C::new(var.exp().try_into()?);
 
