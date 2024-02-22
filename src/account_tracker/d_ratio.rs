@@ -41,12 +41,5 @@ where
         .fold(1.0, |acc, x| acc * x.exp())
         .powf(365.0 / num_trading_days);
 
-    let rtv_acc = roi_acc / cf_var_acc;
-    let rtv_bnh = roi_bnh / cf_var_bnh;
-    debug!(
-            "roi_acc: {:.2}, roi_bnh: {:.2}, cf_var_bnh: {:.8}, cf_var_acc: {:.8}, rtv_acc: {}, rtv_bnh: {}",
-            roi_acc, roi_bnh, cf_var_bnh, cf_var_acc, rtv_acc, rtv_bnh,
-        );
-
     Ok((1.0 + (roi_acc - roi_bnh) / roi_bnh.abs()) * (cf_var_bnh / cf_var_acc))
 }

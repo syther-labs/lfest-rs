@@ -20,8 +20,8 @@ pub struct CornishFisherOutput<M> {
 /// - `confidence_interval`: in range [0.0, 1.0], usually something like 0.01 or
 /// 0.05.
 ///
-pub(crate) fn cornish_fisher_value_at_risk<'a, C>(
-    ln_returns: &LnReturns<'a, f64>,
+pub(crate) fn cornish_fisher_value_at_risk<C>(
+    ln_returns: &LnReturns<'_, f64>,
     asset_value: C,
     confidence_interval: f64,
 ) -> Result<CornishFisherOutput<C>>

@@ -6,6 +6,7 @@ use super::d_ratio;
 use crate::{
     account_tracker::AccountTracker,
     cornish_fisher::cornish_fisher_value_at_risk,
+    prelude::{Account, MarketState},
     quote,
     types::{Currency, LnReturns, MarginCurrency, QuoteCurrency, Side},
     utils::{decimal_pow, decimal_sqrt, decimal_sum, decimal_to_f64, min, variance},
@@ -541,7 +542,8 @@ impl<M> AccountTracker<M> for FullAccountTracker<M>
 where
     M: Currency + MarginCurrency + Send,
 {
-    fn update(&mut self, timestamp_ns: u64, price: QuoteCurrency, upnl: M) {
+    fn update(&mut self, timestamp_ns: u64, market_state: &MarketState, account: &Account<M>) {
+        let price = market_state.mid_price();
         if price == quote!(0) {
             trace!("Price is 0, not updating the `FullAccountTracker`");
             return;
@@ -564,6 +566,9 @@ where
             self.ts_first = timestamp_ns;
         }
         self.ts_last = timestamp_ns;
+        let upnl = account
+            .position()
+            .unrealized_pnl(market_state.bid(), market_state.ask());
         if timestamp_ns > self.next_daily_trigger_ts {
             self.next_daily_trigger_ts = timestamp_ns + DAILY_NS;
 
@@ -757,6 +762,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        prelude::PriceFilter,
         test_helpers::LN_RETS_H,
         utils::{f64_to_decimal, tests::round},
     };
@@ -764,6 +770,10 @@ mod tests {
     // Example pulled from the following article about the Sortino ratio:
     // http://www.redrockcapital.com/Sortino__A__Sharper__Ratio_Red_Rock_Capital.pdf
     const ACC_RETS_H: [f64; 8] = [0.17, 0.15, 0.23, -0.05, 0.12, 0.09, 0.13, -0.04];
+
+    fn mock_market_state_from_mid_price(mid_price: QuoteCurrency) -> MarketState {
+        MarketState::from_components(PriceFilter::default(), mid_price, mid_price, 0, 0)
+    }
 
     #[test]
     fn acc_tracker_profit_loss_ratio() {
@@ -784,16 +794,32 @@ mod tests {
     #[test]
     fn acc_tracker_buy_and_hold_return() {
         let mut at = FullAccountTracker::new(quote!(100.0));
-        at.update(0, quote!(100.0), quote!(0.0));
-        at.update(0, quote!(200.0), quote!(0.0));
+        at.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(100.0)),
+            &Account::default(),
+        );
+        at.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(200.0)),
+            &Account::default(),
+        );
         assert_eq!(at.buy_and_hold_return(), quote!(100.0));
     }
 
     #[test]
     fn acc_tracker_sell_and_hold_return() {
         let mut at = FullAccountTracker::new(quote!(100.0));
-        at.update(0, quote!(100.0), quote!(0.0));
-        at.update(0, quote!(50.0), quote!(0.0));
+        at.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(100.0)),
+            &Account::default(),
+        );
+        at.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(50.0)),
+            &Account::default(),
+        );
         assert_eq!(at.sell_and_hold_return(), quote!(50.0));
     }
 
@@ -818,16 +844,32 @@ mod tests {
     #[test]
     fn acc_tracker_buy_and_hold() {
         let mut acc_tracker = FullAccountTracker::new(quote!(100.0));
-        acc_tracker.update(0, quote!(100.0), quote!(0.0));
-        acc_tracker.update(0, quote!(200.0), quote!(0.0));
+        acc_tracker.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(100.0)),
+            &Account::default(),
+        );
+        acc_tracker.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(200.0)),
+            &Account::default(),
+        );
         assert_eq!(acc_tracker.buy_and_hold_return(), quote!(100.0));
     }
 
     #[test]
     fn acc_tracker_sell_and_hold() {
         let mut acc_tracker = FullAccountTracker::new(quote!(100.0));
-        acc_tracker.update(0, quote!(100.0), quote!(0.0));
-        acc_tracker.update(0, quote!(200.0), quote!(0.0));
+        acc_tracker.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(100.0)),
+            &Account::default(),
+        );
+        acc_tracker.update(
+            0,
+            &mock_market_state_from_mid_price(quote!(200.0)),
+            &Account::default(),
+        );
         assert_eq!(acc_tracker.sell_and_hold_return(), quote!(-100.0));
     }
 

@@ -1,0 +1,9 @@
+procs:
+  cargo-test:
+    shell: "cargo test"
+  cargo-fmt:
+    shell: "cargo +nightly fmt"
+  cargo-clippy:
+    shell: "cargo clippy"
+  cargo-spellcheck:
+    shell: "cargo spellcheck"

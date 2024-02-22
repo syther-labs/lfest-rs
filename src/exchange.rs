@@ -106,13 +106,8 @@ where
     ) -> Result<Vec<Order<S>>> {
         self.market_state
             .update_state(timestamp_ns, &market_update)?;
-        self.account_tracker.update(
-            timestamp_ns,
-            self.market_state.mid_price(),
-            self.account
-                .position
-                .unrealized_pnl(self.market_state.bid(), self.market_state.ask()),
-        );
+        self.account_tracker
+            .update(timestamp_ns, &self.market_state, &self.account);
         if let Err(e) = self
             .risk_engine
             .check_maintenance_margin(&self.market_state, &self.account)

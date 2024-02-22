@@ -90,4 +90,21 @@ impl MarketState {
     pub fn ask(&self) -> QuoteCurrency {
         self.ask
     }
+
+    #[cfg(test)]
+    pub fn from_components(
+        price_filter: PriceFilter,
+        bid: QuoteCurrency,
+        ask: QuoteCurrency,
+        current_ts_ns: i64,
+        step: u64,
+    ) -> Self {
+        Self {
+            price_filter,
+            bid,
+            ask,
+            current_ts_ns,
+            step,
+        }
+    }
 }
